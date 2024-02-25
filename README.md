@@ -1,0 +1,2 @@
+# neovimConfig
+Neovim Config folder
