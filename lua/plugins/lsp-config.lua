@@ -9,7 +9,7 @@ return {
     "williamboman/mason-lspconfig.nvim",
     config = function()
       require("mason-lspconfig").setup({
-        ensure_installed = { "lua_ls", "tsserver", "clangd", "csharp_ls", "asm_lsp", "jdtls", "marksman", "sorbet", "ltex", "html", "jsonls", "pylsp", "rust_analyzer" }
+        ensure_installed = { "lua_ls", "tsserver", "clangd", "csharp_ls", "asm_lsp", "jdtls", "marksman", "ltex", "html", "jsonls", "pylsp", "rust_analyzer" }
     })
     end
   },
@@ -24,7 +24,6 @@ return {
       lspconfig.asm_lsp.setup({})
       lspconfig.jdtls.setup({})
       lspconfig.marksman.setup({})
-      lspconfig.sorbet.setup({})
       lspconfig.ltex.setup({})
       lspconfig.html.setup({})
       lspconfig.jsonls.setup({})
