@@ -1,187 +1,56 @@
 return {
   {
-    "neovim/nvim-lspconfig",
-    event = { "BufReadPost" },
-    cmd = { "LspInfo", "LspInstall", "LspUninstall", "Mason" },
-    dependencies = {
-      -- Plugin(s) and UI to automatically install LSPs to stdpath
-      "williamboman/mason.nvim",
-      "williamboman/mason-lspconfig.nvim",
-      "WhoIsSethDaniel/mason-tool-installer.nvim",
-
-      -- Install lsp autocompletions
-      "hrsh7th/cmp-nvim-lsp",
-
-      -- Progress/Status update for LSP
-      { "j-hui/fidget.nvim", opts = {} },
-    },
-    config = function()
-      local map_lsp_keybinds = require("user.keymaps").map_lsp_keybinds -- Has to load keymaps before pluginslsp
-
-      -- Override tsserver diagnostics to filter out specific messages
-      local messages_to_filter = {
-        "This may be converted to an async function.",
-        "'_Assertion' is declared but never used.",
-        "'__Assertion' is declared but never used.",
-        "The signature '(data: string): string' of 'atob' is deprecated.",
-        "The signature '(data: string): string' of 'btoa' is deprecated.",
-      }
-
-      local function tsserver_on_publish_diagnostics_override(_, result, ctx, config)
-        local filtered_diagnostics = {}
-
-        for _, diagnostic in ipairs(result.diagnostics) do
-          local found = false
-          for _, message in ipairs(messages_to_filter) do
-            if diagnostic.message == message then
-              found = true
-              break
-            end
-          end
-          if not found then
-            table.insert(filtered_diagnostics, diagnostic)
-          end
-        end
-
-        result.diagnostics = filtered_diagnostics
-
-        vim.lsp.diagnostic.on_publish_diagnostics(_, result, ctx, config)
-      end
-
-      -- Default handlers for LSP
-      local default_handlers = {
-        ["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" }),
-        ["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" }),
-      }
-
-      -- Function to run when neovim connects to a Lsp client
-      ---@diagnostic disable-next-line: unused-local
-      local on_attach = function(_client, buffer_number)
-        -- Pass the current buffer to map lsp keybinds
-        map_lsp_keybinds(buffer_number)
-
-      end
-
-      local capabilities = vim.lsp.protocol.make_client_capabilities()
-      capabilities = vim.tbl_deep_extend("force", capabilities, require("cmp_nvim_lsp").default_capabilities())
-
-      local servers = {
-        -- LSP Servers
-        bashls = {},
-        cssls = {},
-        html = {},
-        clangd = {},
-        cmake = {},
-        pyre = {},
-        powershell_es = {},
-        jsonls = {},
-        lua_ls = {
-          settings = {
-            Lua = {
-              runtime = { version = "LuaJIT" },
-              workspace = {
-                checkThirdParty = false,
-                -- Tells lua_ls where to find all the Lua files that you have loaded
-                -- for your neovim configuration.
-                library = {
-                  "${3rd}/luv/library",
-                  unpack(vim.api.nvim_get_runtime_file("", true)),
-                },
-              },
-              telemetry = { enabled = false },
-            },
-          },
-        },
-        marksman = {},
-        ocamllsp = {},
-        nil_ls = {},
-        pyright = {},
-        sqlls = {},
-        tailwindcss = {},
-        tsserver = {
-          settings = {
-            maxTsServerMemory = 12000,
-          },
-          handlers = {
-            ["textDocument/publishDiagnostics"] = vim.lsp.with(
-              tsserver_on_publish_diagnostics_override,
-              {}
-            ),
-          },
-        },
-        yamlls = {},
-      }
-
-      local formatters = {
-        prettierd = {},
-        stylua = {},
-      }
-
-      local linters = {
-        eslint_d = {},
-      }
-
-      local manually_installed_servers = { "ocamllsp" }
-
-      local mason_tools_to_install = vim.tbl_keys(vim.tbl_deep_extend("force", {}, servers, formatters, linters))
-
-      local ensure_installed = vim.tbl_filter(function(name)
-        return not vim.tbl_contains(manually_installed_servers, name)
-      end, mason_tools_to_install)
-
-      require("mason-tool-installer").setup({
-        auto_update = true,
-        run_on_start = true,
-        start_delay = 3000,
-        debounce_hours = 12,
-        ensure_installed = ensure_installed,
-      })
-
-      -- Iterate over our servers and set them up
-      for name, config in pairs(servers) do
-        require("lspconfig")[name].setup({
-          capabilities = capabilities,
-          filetypes = config.filetypes,
-          handlers = vim.tbl_deep_extend("force", {}, default_handlers, config.handlers or {}),
-          on_attach = on_attach,
-          settings = config.settings,
-        })
-      end
-
-      -- Setup mason so it can manage 3rd party LSP servers
-      require("mason").setup({
-        ui = {
-          border = "rounded",
-        },
-      })
-
-      require("mason-lspconfig").setup()
-
-      -- Configure borderd for LspInfo ui
-      require("lspconfig.ui.windows").default_options.border = "rounded"
-
-      -- Configure diagnostics border
-      vim.diagnostic.config({
-        float = {
-          border = "rounded",
-        },
-      })
-    end,
+  "williamboman/mason.nvim",
+  config = function()
+    require("mason").setup()
+  end
   },
   {
-    "stevearc/conform.nvim",
-    opts = {
-      notify_on_error = true,
-      format_after_save = {
-        async = true,
-        timeout_ms = 500,
-        lsp_fallback = true,
-      },
-      formatters_by_ft = {
-        javascript = { { "eslint_d", "eslint" }, { "prettierd", "prettier" } },
-        typescript = { { "eslint_d", "eslint" }, { "prettierd", "prettier" } },
-        lua = { "stylua" },
-      },
-    },
+    "williamboman/mason-lspconfig.nvim",
+    config = function()
+      require("mason-lspconfig").setup({
+        ensure_installed = { "lua_ls", "tsserver", "clangd", "csharp_ls", "asm_lsp", "jdtls", "marksman", "ltex", "html", "jsonls", "pylsp", "rust_analyzer" }
+    })
+    end
   },
+  {
+    "neovim/nvim-lspconfig",
+    config = function()
+      local capabilities = require('cmp_nvim_lsp').default_capabilities
+      local lspconfig = require("lspconfig")
+      lspconfig.lua_ls.setup({capabilities = capabilities})
+      lspconfig.tsserver.setup({capabilities = capabilities})
+      lspconfig.csharp_ls.setup({capabilities = capabilities})
+      lspconfig.asm_lsp.setup({capabilities = capabilities})
+      lspconfig.jdtls.setup({capabilities = capabilities})
+      lspconfig.marksman.setup({capabilities = capabilities})
+      lspconfig.ltex.setup({capabilities = capabilities})
+      lspconfig.html.setup({capabilities = capabilities})
+      lspconfig.jsonls.setup({capabilities = capabilities})
+      lspconfig.pylsp.setup({capabilities = capabilities})
+      lspconfig.rust_analyzer.setup({capabilities = capabilities})
+      lspconfig.clangd.setup{
+        on_attach = on_attach,
+        cmd = {
+          "/opt/homebrew/opt/llvm/bin/clangd",
+          "--background-index",
+          "--pch-storage=memory",
+          "--all-scopes-completion",
+          "--pretty",
+          "--header-insertion=never",
+          "-j=4",
+          "--inlay-hints",
+          "--header-insertion-decorators",
+          "--function-arg-placeholders",
+          "--completion-style=detailed"
+        },
+        filetypes = {"c", "cpp", "objc", "objcpp"},
+        init_option = { fallbackFlags = {  "-std=c++2a"  } },
+        capabilities = capabilities
+      } 
+      vim.keymap.set('n', 'K', vim.lsp.buf.hover, {})
+      vim.keymap.set('n', 'gd', vim.lsp.buf.definition, {})
+      vim.keymap.set({'n', 'v'}, '<leader>ca', vim.lsp.buf.code_action, {})
+    end
+  }
 }
