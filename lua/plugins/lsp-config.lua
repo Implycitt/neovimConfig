@@ -16,7 +16,7 @@ return {
   {
     "neovim/nvim-lspconfig",
     config = function()
-      local capabilities = require('cmp_nvim_lsp').default_capabilities
+      local capabilities = require('cmp_nvim_lsp').default_capabilities()
       local lspconfig = require("lspconfig")
       lspconfig.lua_ls.setup({capabilities = capabilities})
       lspconfig.tsserver.setup({capabilities = capabilities})
@@ -29,25 +29,23 @@ return {
       lspconfig.jsonls.setup({capabilities = capabilities})
       lspconfig.pylsp.setup({capabilities = capabilities})
       lspconfig.rust_analyzer.setup({capabilities = capabilities})
-      lspconfig.clangd.setup{
+      lspconfig.clangd.setup({
+        capabilities = capabilities,
         on_attach = on_attach,
-        cmd = {
-          "/opt/homebrew/opt/llvm/bin/clangd",
-          "--background-index",
-          "--pch-storage=memory",
-          "--all-scopes-completion",
-          "--pretty",
-          "--header-insertion=never",
-          "-j=4",
-          "--inlay-hints",
-          "--header-insertion-decorators",
-          "--function-arg-placeholders",
-          "--completion-style=detailed"
-        },
-        filetypes = {"c", "cpp", "objc", "objcpp"},
-        init_option = { fallbackFlags = {  "-std=c++2a"  } },
-        capabilities = capabilities
-      } 
+        filetypes = { "h", "c", "cpp", "cc", "objc", "objcpp"},
+        flags = lsp_flags,
+        cmd = {"clangd", "--background-index"},
+        single_file_support = true,
+        root_dir = lspconfig.util.root_pattern(
+          '.clangd',
+          '.clang-tidy',
+          '.clang-format',
+          'compile_commands.json',
+          'compile_flags.txt',
+          'configure.ac',
+          '.git'
+        )
+      }) 
       vim.keymap.set('n', 'K', vim.lsp.buf.hover, {})
       vim.keymap.set('n', 'gd', vim.lsp.buf.definition, {})
       vim.keymap.set({'n', 'v'}, '<leader>ca', vim.lsp.buf.code_action, {})
