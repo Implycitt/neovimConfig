@@ -34,7 +34,7 @@ return {
           'configure.ac',
           '.git'
         )
-      }) 
+      })
       lspconfig.lua_ls.setup({capabilities = capabilities})
       lspconfig.tsserver.setup({capabilities = capabilities})
       lspconfig.csharp_ls.setup({capabilities = capabilities})
